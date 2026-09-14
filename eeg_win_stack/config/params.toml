@@ -10,7 +10,7 @@ mlflow_tracking_uri = "mlruns"
 # MLflow is the system of record for run history, so a tracking failure aborts
 # the stage by default. Set false for offline work where the pipeline should
 # still complete without a run being recorded.
-mlflow_required = true
+mlflow_required = false
 
 [logging]
 # Consumed by eeg_win_stack.tools.logger.Logger.from_config
@@ -21,20 +21,20 @@ console = true
 [data]
 use_tuab = true
 use_tueg = false
-n_tuab = 23
+n_tuab = 2993
 n_tueg = 50
 n_load = 1
 preload = false
-tuab_path = "./data/TUAB/"
+tuab_path = "E:/TUAB"
 tueg_path = ""
-load_saved_recordings = false
+load_saved_recordings = true
 save_recordings = true
 save_recordings_path = "./target/saved_recordings"
-load_saved_windows = false
+load_saved_windows = true
 save_windows = true
 save_windows_path = "./target/saved_windows"
 relabel_datasets = ""
-relabel_labels = "./data/relabel_labels.csv"
+relabel_labels = ""
 
 [preprocessing]
 bandpass_filter = false
@@ -54,15 +54,17 @@ sec_to_cut = 60
 duration_recording_sec = 1200
 # window_stride_samples omitted — defaults to window_len_samples when absent
 # tmax omitted — defaults to None (use full recording) when absent
+# No "EEG " prefix: braindecode's TUHAbnormal reads files with infer_types=True,
+# which strips it before these names are ever compared against.
 channels = [
-    "EEG FP1-REF", "EEG FP2-REF", "EEG F3-REF", "EEG F4-REF", "EEG C3-REF",
-    "EEG C4-REF", "EEG P3-REF", "EEG P4-REF", "EEG O1-REF", "EEG O2-REF",
-    "EEG F7-REF", "EEG F8-REF", "EEG T3-REF", "EEG T4-REF", "EEG T5-REF",
-    "EEG T6-REF", "EEG FZ-REF", "EEG PZ-REF", "EEG CZ-REF",
+    "FP1-REF", "FP2-REF", "F3-REF", "F4-REF", "C3-REF",
+    "C4-REF", "P3-REF", "P4-REF", "O1-REF", "O2-REF",
+    "F7-REF", "F8-REF", "T3-REF", "T4-REF", "T5-REF",
+    "T6-REF", "FZ-REF", "PZ-REF", "CZ-REF",
 ]
 
 [split]
-split_way = "proportion"
+split_way = "folder"
 train_size = 0.8
 valid_size = 0.1
 test_size = 0.1
@@ -92,7 +94,7 @@ train_whole_dataset_again = true
 load_pretrained_model = false
 
 [model]
-name = "deep4"
+name = "tcn"
 final_conv_length = "auto"
 dropout = 0.1
 

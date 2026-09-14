@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+import contextlib
+import os
+import re
 from pathlib import Path
 
+import joblib
 import mne
 import numpy as np
 from braindecode.datasets import BaseConcatDataset, TUH, TUHAbnormal
 from braindecode.preprocessing import Preprocessor, exponential_moving_standardize, preprocess
+from tqdm import tqdm
 
 from eeg_win_stack.io.labeling import relabel
 from eeg_win_stack.tools.filters import (
@@ -18,9 +23,68 @@ from eeg_win_stack.tools.filters import (
 )
 
 
+@contextlib.contextmanager
+def _tqdm_joblib(tqdm_bar):
+    """Report joblib batch completions (used by braindecode's ``preprocess``) to ``tqdm_bar``."""
+
+    class _TqdmBatchCompletionCallback(joblib.parallel.BatchCompletionCallBack):
+        def __call__(self, *args, **kwargs):
+            tqdm_bar.update(n=self.batch_size)
+            return super().__call__(*args, **kwargs)
+
+    original_callback = joblib.parallel.BatchCompletionCallBack
+    joblib.parallel.BatchCompletionCallBack = _TqdmBatchCompletionCallback
+    try:
+        yield tqdm_bar
+    finally:
+        joblib.parallel.BatchCompletionCallBack = original_callback
+        tqdm_bar.close()
+
+
+def _parse_additional_description_from_file_path(file_path):
+    """Replaces braindecode's version of this method, which does ``tokens[-9]``
+    assuming the old, deeper v2.0.0 folder layout (.../subject/session_date/file.edf).
+    TUAB v3.0.1's real layout is flatter (.../01_tcp_ar/file.edf), so that index is
+    always out of range; find the "vX.Y.Z" token instead of counting from the end.
+    """
+    file_path = os.path.normpath(file_path)
+    tokens = file_path.split(os.sep)
+    assert "abnormal" in tokens or "normal" in tokens, "No pathology labels found."
+    assert "train" in tokens or "eval" in tokens, "No train or eval set information found."
+    version = next((t for t in tokens if re.match(r"v\d+\.\d+\.\d+", t)), None)
+    return {
+        "version": version,
+        "train": "train" in tokens,
+        "pathological": "abnormal" in tokens,
+    }
+
+
+TUHAbnormal._parse_additional_description_from_file_path = staticmethod(
+    _parse_additional_description_from_file_path
+)
+
+
 def custom_crop(raw, tmin=0.0, tmax=None, include_tmax=True):
     tmax = min((raw.n_times - 1) / raw.info["sfreq"], tmax)
     raw.crop(tmin=tmin, tmax=tmax, include_tmax=include_tmax)
+
+
+_FIF_MEAS_DATE_SECONDS_RANGE = (-2147483648, 2147483647)
+
+
+def clamp_invalid_meas_date(raw):
+    """Null out de-identified TUAB recording dates MNE's FIF format can't store.
+
+    A handful of TUAB recordings carry a ``meas_date`` older than 1901, outside the
+    int32-seconds-since-epoch range FIF requires, which otherwise raises a
+    RuntimeError only when the recording is saved.
+    """
+    meas_date = raw.info.get("meas_date")
+    if meas_date is not None:
+        seconds = int(meas_date.timestamp())
+        if not (_FIF_MEAS_DATE_SECONDS_RANGE[0] <= seconds <= _FIF_MEAS_DATE_SECONDS_RANGE[1]):
+            raw.set_meas_date(None)
+    return raw
 
 
 class RawEEGLoader:
@@ -119,6 +183,7 @@ class RawEEGLoader:
     ) -> BaseConcatDataset:
         """Resample, crop, scale, clip, and optionally filter/standardise recordings."""
         preprocessors = [
+            Preprocessor(clamp_invalid_meas_date, apply_on_array=False),
             Preprocessor("pick_types", eeg=True, meg=False, stim=False),
             *([Preprocessor("pick_channels", ch_names=channels, ordered=True)] if channels else []),
             Preprocessor(fn="resample", sfreq=sampling_freq),
@@ -146,7 +211,11 @@ class RawEEGLoader:
                 )
             )
 
-        preprocess(recordings, preprocessors, save_dir=save_dir, overwrite=False, n_jobs=self.n_jobs)
+        # overwrite=True: save_dir isn't a DVC-tracked out, so stale subdirectories
+        # from a previous n_tuab (recording count) would otherwise raise
+        # FileExistsError instead of being replaced by this run's recordings.
+        with _tqdm_joblib(tqdm(desc="Preprocessing recordings", total=len(recordings.datasets), unit="rec")):
+            preprocess(recordings, preprocessors, save_dir=save_dir, overwrite=True, n_jobs=self.n_jobs)
         return recordings
 
     def save_as_brainvision(self, recordings: BaseConcatDataset, output_dir: str) -> None:
