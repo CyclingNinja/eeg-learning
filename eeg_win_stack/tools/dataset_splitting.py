@@ -14,9 +14,9 @@ import numpy as np
 from braindecode.datasets import BaseConcatDataset
 from sklearn.model_selection import train_test_split
 
-from eeg_win_stack.tools.filters import drop_duplicates
 from eeg_win_stack.tools.logger import get_logger
-from eeg_win_stack.tools.paths import findall
+from eeg_preprocessing.tools.filters import drop_duplicates
+from eeg_preprocessing.tools.paths import findall
 
 log = get_logger(__name__)
 

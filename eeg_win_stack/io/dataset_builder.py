@@ -7,9 +7,11 @@ from pathlib import Path
 
 from braindecode.datautil import load_concat_dataset
 from braindecode.datasets import BaseConcatDataset
-from braindecode.preprocessing import create_fixed_length_windows
 
-from eeg_win_stack.io.raw_eeg_loading import RawEEGLoader
+from eeg_preprocessing.io.preprocessing import preprocess_recordings
+from eeg_preprocessing.io.sources import TUHCorpusLoader
+from eeg_preprocessing.io.windowing import window_recordings
+from eeg_preprocessing.tools.filters import curate_recordings
 from eeg_win_stack.tools.logger import get_logger
 
 log = get_logger(__name__)
@@ -162,7 +164,7 @@ class DatasetBuilder:
         return recordings
 
     def _load_and_preprocess_raw(self) -> BaseConcatDataset:
-        loader = RawEEGLoader(
+        loader = TUHCorpusLoader(
             tuab_path=self.tuab_path,
             tueg_path=self.tueg_path,
             n_tuab=self.n_tuab,
@@ -170,7 +172,6 @@ class DatasetBuilder:
             use_tuab=self.use_tuab,
             use_tueg=self.use_tueg,
             preload=self.preload,
-            n_jobs=self.n_jobs,
         )
         # Each phase is logged separately: this path holds whole recordings in
         # RAM, so knowing which phase was running when it died is the diagnosis.
@@ -186,7 +187,7 @@ class DatasetBuilder:
         )
 
         start = time.perf_counter()
-        recordings = loader.filter(
+        recordings = curate_recordings(
             recordings,
             tmin=self.tmin,
             tmax=self.tmax,
@@ -202,7 +203,7 @@ class DatasetBuilder:
 
         save_dir = self.saved_data_path if self.save_preprocessed else None
         start = time.perf_counter()
-        recordings = loader.preprocess_recordings(
+        recordings = preprocess_recordings(
             recordings,
             sampling_freq=self.sampling_freq,
             sec_to_cut=self.sec_to_cut,
@@ -217,6 +218,7 @@ class DatasetBuilder:
             factor_new=self.factor_new,
             init_block_size=self.init_block_size,
             save_dir=save_dir,
+            n_jobs=self.n_jobs,
         )
         log.info(
             "preprocessed %d recordings in %.1fs (sfreq=%s, save_dir=%s)",
@@ -232,40 +234,16 @@ class DatasetBuilder:
     # ------------------------------------------------------------------
 
     def _window(self, recordings: BaseConcatDataset) -> BaseConcatDataset:
-        fs = recordings.datasets[0].raw.info["sfreq"]
-        window_len_samples = int(fs * self.window_len_s)
-        stride = self.window_stride_samples or window_len_samples
+        """Window ``recordings``, then persist if configured.
 
-        log.info(
-            "windowing %d recordings: fs=%s, window=%d samples (%ss), stride=%d",
-            len(recordings.datasets),
-            fs,
-            window_len_samples,
-            self.window_len_s,
-            stride,
-        )
-        start = time.perf_counter()
-
-        windows_ds = create_fixed_length_windows(
+        The windowing itself is the shared transform; only the saving is this
+        orchestrator's business, which is why the two are split.
+        """
+        windows_ds = window_recordings(
             recordings,
-            start_offset_samples=0,
-            stop_offset_samples=None,
-            window_size_samples=window_len_samples,
-            window_stride_samples=stride,
-            drop_last_window=True,
+            window_len_s=self.window_len_s,
+            window_stride_samples=self.window_stride_samples,
             preload=self.preload,
-            drop_bad_windows=True,
-        )
-
-        for sub_ds in windows_ds.datasets:
-            sub_ds.windows.drop_bad()
-            assert sub_ds.windows.preload == self.preload
-
-        log.info(
-            "created %d windows from %d recordings in %.1fs",
-            len(windows_ds),
-            len(windows_ds.datasets),
-            time.perf_counter() - start,
         )
 
         if self.save_windows:

@@ -118,40 +118,38 @@ class TestLoadSavedRecordings:
 
 
 class TestWindow:
-    @patch("eeg_win_stack.io.dataset_builder.create_fixed_length_windows")
-    def test_window_size_computed_from_sfreq(self, mock_create, mock_concat_dataset, mock_windows_dataset):
-        mock_create.return_value = mock_windows_dataset
-        db = DatasetBuilder(window_len_s=30.0)  # sfreq=100 → 3000 samples
-        db._window(mock_concat_dataset)
-        _, kwargs = mock_create.call_args
-        assert kwargs["window_size_samples"] == 3000
+    """What _window still owns after the transform moved out: persistence.
 
-    @patch("eeg_win_stack.io.dataset_builder.create_fixed_length_windows")
-    def test_stride_defaults_to_window_length(self, mock_create, mock_concat_dataset, mock_windows_dataset):
-        mock_create.return_value = mock_windows_dataset
-        db = DatasetBuilder(window_len_s=60.0, window_stride_samples=None)
-        db._window(mock_concat_dataset)
-        _, kwargs = mock_create.call_args
-        assert kwargs["window_stride_samples"] == kwargs["window_size_samples"]
+    The window-size and stride arithmetic now lives in
+    eeg_preprocessing.io.windowing and is tested there — asserting it again here
+    would only pin the delegation twice.
+    """
 
-    @patch("eeg_win_stack.io.dataset_builder.create_fixed_length_windows")
-    def test_custom_stride_passed_through(self, mock_create, mock_concat_dataset, mock_windows_dataset):
-        mock_create.return_value = mock_windows_dataset
-        db = DatasetBuilder(window_stride_samples=500)
+    @patch("eeg_win_stack.io.dataset_builder.window_recordings")
+    def test_delegates_windowing_with_the_configured_parameters(self, mock_window, mock_concat_dataset):
+        db = DatasetBuilder(window_len_s=30.0, window_stride_samples=500, preload=False)
         db._window(mock_concat_dataset)
-        _, kwargs = mock_create.call_args
-        assert kwargs["window_stride_samples"] == 500
+        mock_window.assert_called_once_with(
+            mock_concat_dataset,
+            window_len_s=30.0,
+            window_stride_samples=500,
+            preload=False,
+        )
 
-    @patch("eeg_win_stack.io.dataset_builder.create_fixed_length_windows")
-    def test_saves_when_flag_set(self, mock_create, mock_concat_dataset, mock_windows_dataset):
-        mock_create.return_value = mock_windows_dataset
+    @patch("eeg_win_stack.io.dataset_builder.window_recordings")
+    def test_returns_the_windowed_dataset(self, mock_window, mock_concat_dataset, mock_windows_dataset):
+        mock_window.return_value = mock_windows_dataset
+        assert DatasetBuilder()._window(mock_concat_dataset) is mock_windows_dataset
+
+    @patch("eeg_win_stack.io.dataset_builder.window_recordings")
+    def test_saves_when_flag_set(self, mock_window, mock_concat_dataset, mock_windows_dataset):
+        mock_window.return_value = mock_windows_dataset
         db = DatasetBuilder(save_windows=True, saved_windows_path="/tmp/wins")
         db._window(mock_concat_dataset)
         mock_windows_dataset.save.assert_called_once_with("/tmp/wins", overwrite=True)
 
-    @patch("eeg_win_stack.io.dataset_builder.create_fixed_length_windows")
-    def test_does_not_save_by_default(self, mock_create, mock_concat_dataset, mock_windows_dataset):
-        mock_create.return_value = mock_windows_dataset
-        db = DatasetBuilder()
-        db._window(mock_concat_dataset)
+    @patch("eeg_win_stack.io.dataset_builder.window_recordings")
+    def test_does_not_save_by_default(self, mock_window, mock_concat_dataset, mock_windows_dataset):
+        mock_window.return_value = mock_windows_dataset
+        DatasetBuilder()._window(mock_concat_dataset)
         mock_windows_dataset.save.assert_not_called()

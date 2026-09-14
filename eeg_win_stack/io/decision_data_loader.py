@@ -15,7 +15,7 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset
 
-from eeg_win_stack.tools.paths import findall
+from eeg_preprocessing.tools.paths import findall
 
 
 class DecisionDataset(Dataset):
