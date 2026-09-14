@@ -24,6 +24,7 @@ dependencies = [
   "xgboost>=2.0,<4.0",
   "Pillow>=10.0,<12.0",
   "mlflow>=2.0,<3.0",
+  "tqdm>=4.66,<5.0",
 ]
 
 [project.scripts]

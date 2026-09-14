@@ -9,7 +9,7 @@ stages:
           use_tueg: false
           n_tuab: 2993
           n_tueg: 50
-          n_load: 100
+          n_load: 1
           preload: false
           tuab_path: E:/TUAB
           tueg_path: ''
@@ -20,7 +20,7 @@ stages:
           save_windows: true
           save_windows_path: ./target/saved_windows
           relabel_datasets: ''
-          relabel_labels: ./data/relabel_labels.csv
+          relabel_labels: ''
         preprocessing:
           bandpass_filter: false
           low_cut_hz: 4.0
@@ -39,6 +39,8 @@ stages:
           azure_artifact_root: 
             wasbs://mlflow-artifacts@medshedeegwinstack.blob.core.windows.net/experiments
           experiment_name: eeg_win_stack
+          mlflow_tracking_uri: mlruns
+          mlflow_required: false
         windowing:
           window_len_s: 60
           multiple: 0
@@ -46,39 +48,39 @@ stages:
           sec_to_cut: 60
           duration_recording_sec: 1200
           channels:
-          - EEG FP1-REF
-          - EEG FP2-REF
-          - EEG F3-REF
-          - EEG F4-REF
-          - EEG C3-REF
-          - EEG C4-REF
-          - EEG P3-REF
-          - EEG P4-REF
-          - EEG O1-REF
-          - EEG O2-REF
-          - EEG F7-REF
-          - EEG F8-REF
-          - EEG T3-REF
-          - EEG T4-REF
-          - EEG T5-REF
-          - EEG T6-REF
-          - EEG FZ-REF
-          - EEG PZ-REF
-          - EEG CZ-REF
+          - FP1-REF
+          - FP2-REF
+          - F3-REF
+          - F4-REF
+          - C3-REF
+          - C4-REF
+          - P3-REF
+          - P4-REF
+          - O1-REF
+          - O2-REF
+          - F7-REF
+          - F8-REF
+          - T3-REF
+          - T4-REF
+          - T5-REF
+          - T6-REF
+          - FZ-REF
+          - PZ-REF
+          - CZ-REF
     outs:
     - path: target/saved_windows
       hash: md5
-      md5: 77a11aff4e217b11dda0b09802406dee.dir
-      size: 26358566777
-      nfiles: 11972
+      md5: 349a0f31b587bd2c50afb7c2df7a7bf5.dir
+      size: 26367347328
+      nfiles: 17958
   train:
     cmd: uv run python -m eeg_win_stack.pipeline.train
     deps:
     - path: ./target/saved_windows
       hash: md5
-      md5: 77a11aff4e217b11dda0b09802406dee.dir
-      size: 26358566777
-      nfiles: 11972
+      md5: 349a0f31b587bd2c50afb7c2df7a7bf5.dir
+      size: 26367347328
+      nfiles: 17958
     params:
       eeg_win_stack/config/params.toml:
         model:
@@ -137,6 +139,8 @@ stages:
           azure_artifact_root: 
             wasbs://mlflow-artifacts@medshedeegwinstack.blob.core.windows.net/experiments
           experiment_name: eeg_win_stack
+          mlflow_tracking_uri: mlruns
+          mlflow_required: false
         split:
           split_way: folder
           train_size: 0.8
@@ -157,22 +161,22 @@ stages:
     outs:
     - path: target/saved_models/window_model
       hash: md5
-      md5: 4459bd0a818a80e3095247fea6717d1e.dir
-      size: 1268046
-      nfiles: 1
+      md5: 73ab7c92b4172911f6559a35f954dee3.dir
+      size: 1268784
+      nfiles: 2
   evaluate:
     cmd: uv run python -m eeg_win_stack.pipeline.evaluate
     deps:
     - path: .\target\saved_windows
       hash: md5
-      md5: 77a11aff4e217b11dda0b09802406dee.dir
-      size: 26358566777
-      nfiles: 11972
+      md5: 349a0f31b587bd2c50afb7c2df7a7bf5.dir
+      size: 26367347328
+      nfiles: 17958
     - path: target/saved_models/window_model
       hash: md5
-      md5: 4459bd0a818a80e3095247fea6717d1e.dir
-      size: 1268046
-      nfiles: 1
+      md5: 73ab7c92b4172911f6559a35f954dee3.dir
+      size: 1268784
+      nfiles: 2
     params:
       eeg_win_stack/config/params.toml:
         model:
@@ -222,6 +226,7 @@ stages:
             heads: 16
             mlp_dim: 64
             emb_dropout: 0.1
+        output.saved_models_path: ./target/saved_models/window_model
         output.training_detail_path: ./target/training_detail
         run:
           mne_log_level: WARNING
@@ -232,6 +237,8 @@ stages:
           azure_artifact_root: 
             wasbs://mlflow-artifacts@medshedeegwinstack.blob.core.windows.net/experiments
           experiment_name: eeg_win_stack
+          mlflow_tracking_uri: mlruns
+          mlflow_required: false
         split:
           split_way: folder
           train_size: 0.8
@@ -241,20 +248,25 @@ stages:
     outs:
     - path: metrics.json
       hash: md5
-      md5: f15650917ce629bd1e5758aad440d39b
-      size: 137
+      md5: 10d5aae32d094da5f2724eed1263a1c4
+      size: 134
     - path: target/training_detail
       hash: md5
-      md5: 44ce6d913b3565c7f8a8caf1bdcd0e34.dir
-      size: 3034264
+      md5: a542e6d69193ed6c95613adb5ba46026.dir
+      size: 2783954
       nfiles: 5
   decision:
     cmd: uv run python -m eeg_win_stack.pipeline.decision
     deps:
+    - path: target/saved_models/window_model
+      hash: md5
+      md5: 73ab7c92b4172911f6559a35f954dee3.dir
+      size: 1268784
+      nfiles: 2
     - path: target/training_detail
       hash: md5
-      md5: 44ce6d913b3565c7f8a8caf1bdcd0e34.dir
-      size: 3034264
+      md5: a542e6d69193ed6c95613adb5ba46026.dir
+      size: 2783954
       nfiles: 5
     params:
       eeg_win_stack/config/params.toml:
@@ -297,6 +309,7 @@ stages:
             n_jobs: -1
             random_state: 87
         output.decision_models_path: ./target/saved_models/decision_model
+        output.saved_models_path: ./target/saved_models/window_model
         run:
           mne_log_level: WARNING
           n_repetitions: 1
@@ -306,17 +319,15 @@ stages:
           azure_artifact_root: 
             wasbs://mlflow-artifacts@medshedeegwinstack.blob.core.windows.net/experiments
           experiment_name: eeg_win_stack
+          mlflow_tracking_uri: mlruns
+          mlflow_required: false
     outs:
     - path: target/decision_metrics.json
       hash: md5
-      md5: 0ee0314e657c5f22ae923709c672263e
-      size: 144
-    - path: target/decision_results.csv
-      hash: md5
-      md5: 099bf06869df5429d824031af52a1c2d
-      size: 720
+      md5: 9579e91d54959b5aa00ad60f7c9db0ca
+      size: 146
     - path: target/saved_models/decision_model
       hash: md5
-      md5: ac8b10313f8ff86e96c6cc083c1e27c6.dir
-      size: 2812
+      md5: a328b431d8d834c3bd5ff911cd7cd2d0.dir
+      size: 3257
       nfiles: 2
