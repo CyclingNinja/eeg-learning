@@ -3,7 +3,7 @@
 This document describes how to run the EEG training pipeline and where the
 results are logged. The pipeline is defined declaratively in
 [`dvc.yaml`](../dvc.yaml) and parameterised entirely from
-[`eeg_win_stack/config/params.toml`](../eeg_learning/config/params.toml).
+[`eeg_learning/config/params.toml`](../eeg_learning/config/params.toml).
 
 ## Overview
 
@@ -16,12 +16,12 @@ preprocess ──▶ train ──▶ evaluate ──▶ decision
 
 | Stage        | Command                                   | Reads (deps + params)                     | Produces (outs/metrics)                       |
 | ------------ | ----------------------------------------- | ----------------------------------------- | --------------------------------------------- |
-| `preprocess` | `uv run python -m eeg_win_stack.pipeline.preprocess` | `data`, `preprocessing`, `windowing`, `run` | `target/saved_windows/` (cached)              |
-| `train`      | `uv run python -m eeg_win_stack.pipeline.train`      | `target/saved_windows`; `split`, `training`, `model`, `run` | `target/saved_models/window_model/` (cached) |
-| `evaluate`   | `uv run python -m eeg_win_stack.pipeline.evaluate`   | `target/saved_windows`, `target/saved_models/window_model`; `split`, `model`, `run`, `output.training_detail_path` | `metrics.json` + `target/training_detail/` + MLflow run |
-| `decision`   | `uv run python -m eeg_win_stack.pipeline.decision`   | `target/training_detail`; `decision`, `output.decision_models_path`, `run` | `target/decision_metrics.json` + `target/saved_models/decision_model/` + MLflow nested runs |
+| `preprocess` | `uv run python -m eeg_learning.pipeline.preprocess` | `data`, `preprocessing`, `windowing`, `run` | `target/saved_windows/` (cached)              |
+| `train`      | `uv run python -m eeg_learning.pipeline.train`      | `target/saved_windows`; `split`, `training`, `model`, `run` | `target/saved_models/window_model/` (cached) |
+| `evaluate`   | `uv run python -m eeg_learning.pipeline.evaluate`   | `target/saved_windows`, `target/saved_models/window_model`; `split`, `model`, `run`, `output.training_detail_path` | `metrics.json` + `target/training_detail/` + MLflow run |
+| `decision`   | `uv run python -m eeg_learning.pipeline.decision`   | `target/training_detail`; `decision`, `output.decision_models_path`, `run` | `target/decision_metrics.json` + `target/saved_models/decision_model/` + MLflow nested runs |
 
-Each stage entry point is a thin `main()` that calls `eeg_win_stack.config.load()`
+Each stage entry point is a thin `main()` that calls `eeg_learning.config.load()`
 to read `params.toml` and then runs the relevant subpackage
 (`DatasetBuilder`, `Trainer`, `Evaluator`).
 
@@ -42,10 +42,10 @@ You also need the TUAB/TUEG datasets on disk at the paths configured under
 
 ## Where parameters live
 
-All tunable parameters live in **`eeg_win_stack/config/params.toml`**, grouped
+All tunable parameters live in **`eeg_learning/config/params.toml`**, grouped
 into sections (`run`, `data`, `preprocessing`, `windowing`, `split`,
 `training`, `output`, `model`). The pipeline always loads this file via
-`eeg_win_stack/config/loader.py`; `dvc.yaml` references the same path so DVC
+`eeg_learning/config/loader.py`; `dvc.yaml` references the same path so DVC
 tracks which parameters each stage depends on.
 
 To change behaviour you can either edit `params.toml` directly (for a plain
@@ -92,7 +92,7 @@ Queue a grid of experiments and run them together. See
 batch-size sweep. The pattern is:
 
 ```bash
-PARAMS="eeg_win_stack/config/params.toml"
+PARAMS="eeg_learning/config/params.toml"
 
 for lr in 0.001 0.0005 0.0001; do
     for batch_size in 1 8 32; do

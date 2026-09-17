@@ -1,6 +1,6 @@
 # Command-line interface
 
-A user guide for the `eeg-win-stack` command — the quickest way to train a model
+A user guide for the `eeg-learning` command — the quickest way to train a model
 from windowed EEG data without writing any Python.
 
 The CLI is a thin shell over the `api` layer: it turns your arguments into a job,
@@ -18,10 +18,10 @@ development):
 pip install -e .
 ```
 
-This registers the `eeg-win-stack` console script. You can invoke the CLI either way:
+This registers the `eeg-learning` console script. You can invoke the CLI either way:
 
 ```bash
-eeg-win-stack --help              # console script
+eeg-learning --help              # console script
 python -m eeg_learning --help    # module form (identical)
 ```
 
@@ -33,7 +33,7 @@ real models. See the note at the bottom.
 Train a model from a directory of pre-windowed data and save the result:
 
 ```bash
-eeg-win-stack train \
+eeg-learning train \
   --windows-path data/saved_windows \
   --output-dir   data/saved_models
 ```
@@ -51,7 +51,7 @@ On success it prints the saved artifact as JSON and exits `0`:
 Because the output is JSON, you can pipe it straight into other tooling:
 
 ```bash
-eeg-win-stack train --windows-path data/saved_windows --output-dir data/saved_models \
+eeg-learning train --windows-path data/saved_windows --output-dir data/saved_models \
   | jq -r .model_id
 ```
 
@@ -79,7 +79,7 @@ does **not** load or window raw recordings — it starts from saved windows.
 
 Training reads all of its hyperparameters — model choice, learning rate, epochs,
 split ratios, and so on — from a `params.toml` file. With no `--config` flag, the CLI
-uses the packaged default at `eeg_win_stack/config/params.toml`, which has these
+uses the packaged default at `eeg_learning/config/params.toml`, which has these
 sections:
 
 | Section          | Controls                                        |
@@ -93,7 +93,7 @@ sections:
 To train with different settings, copy that file, edit it, and pass it:
 
 ```bash
-eeg-win-stack train \
+eeg-learning train \
   --config my_params.toml \
   --windows-path data/saved_windows \
   --output-dir   data/saved_models
@@ -110,7 +110,7 @@ By default the artifact id is `<model-name>_<timestamp>`, e.g.
 useful when you want to reload it later by that name:
 
 ```bash
-eeg-win-stack train \
+eeg-learning train \
   --windows-path data/saved_windows \
   --output-dir   data/saved_models \
   --model-id     deep4_baseline
@@ -128,7 +128,7 @@ choice for a dev machine or a single GPU box.
 They are **not implemented yet**; selecting one fails cleanly:
 
 ```bash
-$ eeg-win-stack train --backend azureml --windows-path w --output-dir o
+$ eeg-learning train --backend azureml --windows-path w --output-dir o
 error: Backend 'azureml' is not implemented yet
 ```
 

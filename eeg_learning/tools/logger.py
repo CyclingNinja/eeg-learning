@@ -42,7 +42,7 @@ DEFAULT_DATEFMT = "%Y-%m-%d %H:%M:%S"
 # Handlers this module owns are tagged so repeat configuration replaces them
 # instead of stacking duplicates (a real hazard: DVC stages, the CLI and the
 # API all configure logging, and a run may hit more than one of them).
-_HANDLER_KEY = "_eeg_win_stack_key"
+_HANDLER_KEY = "_eeg_learning_key"
 _CONSOLE_KEY = "console"
 
 

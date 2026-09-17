@@ -39,7 +39,7 @@ class TestConfigAccessors:
         assert tracking.tracking_uri({"run": {}}) == tracking.DEFAULT_TRACKING_URI
 
     def test_experiment_name_suffixed_when_local(self, cfg):
-        assert tracking.experiment_name(cfg) == "eeg_win_stack_local"
+        assert tracking.experiment_name(cfg) == "eeg_learning_local"
 
     def test_experiment_name_bare_when_azure(self, cfg):
         cfg["run"]["use_azure_artifacts"] = True
@@ -93,7 +93,7 @@ class TestToken:
         token = tracking.read_token(cfg)
         assert token["run_id"] == "abc123"
         assert token["model_path"] == str(model)
-        assert token["experiment"] == "eeg_win_stack_local"
+        assert token["experiment"] == "eeg_learning_local"
 
     def test_write_creates_parent_directory(self, cfg):
         path = tracking.write_token(cfg, run_id=None, model_path="model.pt")
@@ -189,7 +189,7 @@ class TestStartRun:
             with tracking.start_run(cfg, resume=True):
                 pass
 
-        mlflow.set_experiment.assert_called_once_with("eeg_win_stack_local")
+        mlflow.set_experiment.assert_called_once_with("eeg_learning_local")
 
     def test_resume_without_a_token_raises_when_required(self, cfg):
         with patch("eeg_learning.tools.tracking.mlflow", MagicMock()):
@@ -244,9 +244,7 @@ class TestStartRun:
             with tracking.start_run(cfg, resume=False):
                 pass
 
-        mlflow.create_experiment.assert_called_once_with(
-            "eeg_learning", artifact_location="wasbs://bucket/experiments"
-        )
+        mlflow.create_experiment.assert_called_once_with("eeg_learning", artifact_location="wasbs://bucket/experiments")
 
     def test_tracking_uri_comes_from_config(self, cfg):
         mlflow = MagicMock()

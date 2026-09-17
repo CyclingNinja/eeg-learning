@@ -1,9 +1,9 @@
 [run]
 omit = 
-  eeg_win_stack/*setup_package*
-  eeg_win_stack/version*
-  eeg_win_stack/_dev/*
-  */eeg_win_stack/_dev/*
+  eeg_learning/*setup_package*
+  eeg_learning/version*
+  eeg_learning/_dev/*
+  */eeg_learning/_dev/*
   *conftest*
 disable_warnings =
   module-not-measured

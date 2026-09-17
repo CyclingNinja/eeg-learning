@@ -27,7 +27,7 @@ dependencies = [
 ]
 
 [project.scripts]
-eeg-win-stack = "eeg_win_stack.cli:main"
+eeg-learning = "eeg_learning.cli:main"
 
 [tool.setuptools]
 py-modules = [
@@ -37,13 +37,13 @@ py-modules = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["eeg_win_stack*"]
+include = ["eeg_learning*"]
 
 # params.toml is loaded at runtime via Path(__file__).parent, so it must ship
 # inside the wheel/sdist — otherwise load() breaks for any installed consumer
 # (DVC pipeline, API, remote backends), even though it works from the source tree.
 [tool.setuptools.package-data]
-"eeg_win_stack.config" = ["params.toml"]
+"eeg_learning.config" = ["params.toml"]
 
 # Resolve torch from the CPU wheel index. The test/tox env runs on CPU, and the
 # default CUDA wheels pull conflicting nvidia-nccl-cu12/-cu13 packages that fail
