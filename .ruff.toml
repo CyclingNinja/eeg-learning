@@ -4,7 +4,7 @@ exclude = [
   ".git",
   "__pycache__",
   "build",
-  "eeg_win_stack/version.py",
+  "eeg_learning/version.py",
   "train_and_eval*",
 ]
 
