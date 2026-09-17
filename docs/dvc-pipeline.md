@@ -3,7 +3,7 @@
 This document describes how to run the EEG training pipeline and where the
 results are logged. The pipeline is defined declaratively in
 [`dvc.yaml`](../dvc.yaml) and parameterised entirely from
-[`eeg_win_stack/config/params.toml`](../eeg_win_stack/config/params.toml).
+[`eeg_win_stack/config/params.toml`](../eeg_learning/config/params.toml).
 
 ## Overview
 
@@ -77,8 +77,8 @@ any parameter with `-S 'params.toml:section.key=value'`:
 
 ```bash
 dvc exp run \
-    -S 'eeg_win_stack/config/params.toml:training.learning_rate=0.0005' \
-    -S 'eeg_win_stack/config/params.toml:training.n_epochs=50'
+    -S 'eeg_learning/config/params.toml:training.learning_rate=0.0005' \
+    -S 'eeg_learning/config/params.toml:training.n_epochs=50'
 ```
 
 Each experiment is recorded against its parameters and metrics; promote a good
@@ -123,9 +123,9 @@ histogram + padded raw vector, or padded raw probabilities, per `use_his` /
 directly comparable:
 
 ```bash
-dvc exp run -S 'eeg_win_stack/config/params.toml:decision.backend=xgboost'
-dvc exp run -S 'eeg_win_stack/config/params.toml:decision.backend=xgboost' \
-            -S 'eeg_win_stack/config/params.toml:decision.xgboost.max_depth=4'
+dvc exp run -S 'eeg_learning/config/params.toml:decision.backend=xgboost'
+dvc exp run -S 'eeg_learning/config/params.toml:decision.backend=xgboost' \
+            -S 'eeg_learning/config/params.toml:decision.xgboost.max_depth=4'
 dvc exp show    # compare test_acc / mean_acc across backends
 ```
 

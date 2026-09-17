@@ -22,7 +22,7 @@ This registers the `eeg-win-stack` console script. You can invoke the CLI either
 
 ```bash
 eeg-win-stack --help              # console script
-python -m eeg_win_stack --help    # module form (identical)
+python -m eeg_learning --help    # module form (identical)
 ```
 
 Both require the full runtime dependencies (torch, braindecode, mne) — training runs
@@ -151,11 +151,11 @@ today (a `run_evaluation` / evaluate command is planned). The saved artifact is
 self-describing:
 
 ```python
-from eeg_win_stack.api import ModelArtifact
-from eeg_win_stack.training.trainer import Trainer, TrainingConfig
+from eeg_learning.api import ModelArtifact
+from eeg_learning.training.trainer import Trainer, TrainingConfig
 
 artifact = ModelArtifact.load("deep4_baseline", models_dir="data/saved_models")
-model = artifact.build_model()                       # rebuilt from the manifest
+model = artifact.build_model()  # rebuilt from the manifest
 classifier = Trainer(TrainingConfig()).load(model, artifact.model_path)
 ```
 

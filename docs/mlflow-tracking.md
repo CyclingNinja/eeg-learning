@@ -5,7 +5,7 @@ set it up, what each stage records, where training detail and model artifacts
 are stored, and how to point artifact storage at Azure Blob Storage.
 
 All of the integration lives in one module —
-[`eeg_win_stack/tools/tracking.py`](../eeg_win_stack/tools/tracking.py). It is
+[`eeg_win_stack/tools/tracking.py`](../eeg_learning/tools/tracking.py). It is
 the only place in the package that imports `mlflow`, so that is the file to read
 when this document and the code disagree.
 
@@ -81,7 +81,7 @@ can track it.
 ### Configure
 
 Everything is driven from the `[run]` section of
-[`eeg_win_stack/config/params.toml`](../eeg_win_stack/config/params.toml):
+[`eeg_win_stack/config/params.toml`](../eeg_learning/config/params.toml):
 
 ```toml
 [run]
@@ -298,14 +298,14 @@ working.
 `start_run` is a context manager yielding a `Tracker`:
 
 ```python
-from eeg_win_stack.config import load
-from eeg_win_stack.tools import tracking
+from eeg_learning.config import load
+from eeg_learning.tools import tracking
 
 cfg = load()
 
-with tracking.start_run(cfg, resume=False) as tracker:      # mint
+with tracking.start_run(cfg, resume=False) as tracker:  # mint
     tracker.log_params({"model": "deep4"})
-    tracker.log_metrics({"train_loss": 0.42}, step=3)        # step= for curves
+    tracker.log_metrics({"train_loss": 0.42}, step=3)  # step= for curves
     tracker.log_artifact("target/plot.png", artifact_path="figures")
     tracker.set_tags({"note": "smoke run"})
 
@@ -351,7 +351,7 @@ mlflow runs list --experiment-name eeg_win_stack_local
 **Sweep params and get one run per point**
 
 ```bash
-dvc exp run -S 'eeg_win_stack/config/params.toml:training.learning_rate=0.0005'
+dvc exp run -S 'eeg_learning/config/params.toml:training.learning_rate=0.0005'
 ```
 
 Each `dvc exp run` invocation runs `train` afresh, so each mints its own MLflow
@@ -361,7 +361,7 @@ the repo root — DVC needs the full path in `-S`.)
 **Work offline**
 
 ```bash
-dvc exp run -S 'eeg_win_stack/config/params.toml:run.mlflow_required=false'
+dvc exp run -S 'eeg_learning/config/params.toml:run.mlflow_required=false'
 ```
 
 ## Troubleshooting
@@ -380,5 +380,5 @@ dvc exp run -S 'eeg_win_stack/config/params.toml:run.mlflow_required=false'
 
 - [`dvc-pipeline.md`](dvc-pipeline.md) — the pipeline stages and DVC metrics
 - [`azure-blob-setup.md`](azure-blob-setup.md) — full Azure storage walkthrough
-- [`eeg_win_stack/tools/tracking.py`](../eeg_win_stack/tools/tracking.py) — the
+- [`eeg_win_stack/tools/tracking.py`](../eeg_learning/tools/tracking.py) — the
   implementation

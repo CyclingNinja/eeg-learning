@@ -7,12 +7,12 @@ import torch
 import matplotlib as plt
 from sklearn.metrics import confusion_matrix
 from braindecode.visualization import plot_confusion_matrix
-from eeg_win_stack.models import ModelFactory
-from eeg_win_stack.io.dataset_builder import DatasetBuilder
-from eeg_win_stack.tools.metrics import convolution_matrix, find_all_zero, weight_function
-from eeg_win_stack.tools.dataset_splitting import DatasetSplitter
-from eeg_win_stack.tools.plotting import validation_graph
-from eeg_win_stack.config import load
+from eeg_learning.models import ModelFactory
+from eeg_learning.io.dataset_builder import DatasetBuilder
+from eeg_learning.tools.metrics import convolution_matrix, find_all_zero, weight_function
+from eeg_learning.tools.dataset_splitting import DatasetSplitter
+from eeg_learning.tools.plotting import validation_graph
+from eeg_learning.config import load
 
 from torch.nn.functional import elu, relu, gelu
 

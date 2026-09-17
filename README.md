@@ -77,13 +77,13 @@ what MLflow logs, so a future MLflow/Azure Blob backend can adopt it directly.
 ### Train (direct)
 
 ```python
-from eeg_win_stack.config import load
-from eeg_win_stack.api import run_training
+from eeg_learning.config import load
+from eeg_learning.api import run_training
 
-config = load()  # reads eeg_win_stack/config/params.toml
+config = load()  # reads eeg_learning/config/params.toml
 result = run_training(
     config,
-    windows_path="data/saved_windows",   # produced by the preprocess step
+    windows_path="data/saved_windows",  # produced by the preprocess step
     output_dir="data/saved_models",
 )
 print(result.model_id, result.model_path, result.manifest_path)
@@ -95,11 +95,11 @@ The backend interface is what the CLI and service will use, and what cloud
 execution will plug into:
 
 ```python
-from eeg_win_stack.config import load
-from eeg_win_stack.api.backends import get_backend, Job, JobKind
+from eeg_learning.config import load
+from eeg_learning.api.backends import get_backend, Job, JobKind
 
 config = load()
-backend = get_backend("local")          # "azureml" / "slurm" planned
+backend = get_backend("local")  # "azureml" / "slurm" planned
 
 handle = backend.submit(Job(
     kind=JobKind.TRAIN,
@@ -109,18 +109,18 @@ handle = backend.submit(Job(
     options={"model_id": "deep4_run1"},  # optional; defaults to "<name>_<timestamp>"
 ))
 
-print(backend.status(handle))           # JobStatus.COMPLETED (LocalBackend is synchronous)
-print(backend.result(handle))           # {"model_id", "model_path", "manifest_path"}
+print(backend.status(handle))  # JobStatus.COMPLETED (LocalBackend is synchronous)
+print(backend.result(handle))  # {"model_id", "model_path", "manifest_path"}
 ```
 
 ### Reload a saved model
 
 ```python
-from eeg_win_stack.api import ModelArtifact
-from eeg_win_stack.training.trainer import Trainer, TrainingConfig
+from eeg_learning.api import ModelArtifact
+from eeg_learning.training.trainer import Trainer, TrainingConfig
 
 artifact = ModelArtifact.load("deep4_run1", models_dir="data/saved_models")
-model = artifact.build_model()                       # rebuilds the architecture from the manifest
+model = artifact.build_model()  # rebuilds the architecture from the manifest
 classifier = Trainer(TrainingConfig()).load(model, artifact.model_path)
 ```
 

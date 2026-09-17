@@ -19,7 +19,7 @@
 #   mlflow ui         (visual comparison in the browser)
 #
 # PARAMS FILE
-#   All parameters live in eeg_win_stack/config/params.toml.
+#   All parameters live in eeg_learning/config/params.toml.
 #   Override syntax: -S 'path/to/params.toml:section.key=value'
 # =============================================================================
 
