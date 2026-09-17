@@ -1,0 +1,189 @@
+[run]
+mne_log_level = "WARNING"
+n_repetitions = 1
+random_state = 87
+n_jobs = 8
+use_azure_artifacts = false
+azure_artifact_root = "wasbs://mlflow-artifacts@medshedeegwinstack.blob.core.windows.net/experiments"
+experiment_name = "eeg_learning"
+mlflow_tracking_uri = "mlruns"
+# MLflow is the system of record for run history, so a tracking failure aborts
+# the stage by default. Set false for offline work where the pipeline should
+# still complete without a run being recorded.
+mlflow_required = true
+
+[logging]
+# Consumed by eeg_learning.tools.logger.Logger.from_config
+level = "INFO"
+file = ""  # empty = console only; set a path to also append to a file
+console = true
+
+[data]
+use_tuab = true
+use_tueg = false
+n_tuab = 23
+n_tueg = 50
+n_load = 1
+preload = false
+tuab_path = "./data/TUAB/"
+tueg_path = ""
+load_saved_recordings = false
+save_recordings = true
+save_recordings_path = "./target/saved_recordings"
+load_saved_windows = false
+save_windows = true
+save_windows_path = "./target/saved_windows"
+relabel_datasets = ""
+relabel_labels = "./data/relabel_labels.csv"
+
+[preprocessing]
+bandpass_filter = false
+low_cut_hz = 4.0
+high_cut_hz = 38.0
+standardization = true
+factor_new = 1e-3
+init_block_size = 1000
+max_abs_val = 800
+sampling_freq = 100
+
+[windowing]
+window_len_s = 60
+multiple = 0
+tmin = 300
+sec_to_cut = 60
+duration_recording_sec = 1200
+# window_stride_samples omitted — defaults to window_len_samples when absent
+# tmax omitted — defaults to None (use full recording) when absent
+channels = [
+    "EEG FP1-REF", "EEG FP2-REF", "EEG F3-REF", "EEG F4-REF", "EEG C3-REF",
+    "EEG C4-REF", "EEG P3-REF", "EEG P4-REF", "EEG O1-REF", "EEG O2-REF",
+    "EEG F7-REF", "EEG F8-REF", "EEG T3-REF", "EEG T4-REF", "EEG T5-REF",
+    "EEG T6-REF", "EEG FZ-REF", "EEG PZ-REF", "EEG CZ-REF",
+]
+
+[split]
+split_way = "proportion"
+train_size = 0.8
+valid_size = 0.1
+test_size = 0.1
+shuffle = true
+
+[training]
+learning_rate = 0.001
+weight_decay = 0.0005
+batch_size = 8
+n_epochs = 25
+n_classes = 2
+test_on_eval = true
+earlystopping = true
+es_patience = 8
+es_threshold = 0.001
+checkpoint_dir = ""
+
+[output]
+training_results_path = "./target/result.csv"
+# Each stage owns its own subdirectory: DVC refuses overlapping stage outputs,
+# so first-stage and decision-stage models cannot share one directory.
+saved_models_path = "./target/saved_models/window_model"
+decision_models_path = "./target/saved_models/decision_model"
+training_detail_path = "./target/training_detail"
+plot_result = false
+train_whole_dataset_again = true
+load_pretrained_model = false
+
+[model]
+name = "deep4"
+final_conv_length = "auto"
+dropout = 0.1
+
+[model.deep4]
+activation = "elu"
+batch_norm_alpha = 0.1
+n_filters_time = 25
+n_filters_spat = 25
+filter_time_length = 10
+pool_time_length = 3
+pool_time_stride = 3
+n_filters_2 = 50
+filter_length_2 = 10
+n_filters_3 = 100
+filter_length_3 = 10
+n_filters_4 = 200
+filter_length_4 = 10
+first_pool_mode = "max"
+later_pool_mode = "max"
+double_time_convs = false
+split_first_layer = true
+batch_norm = true
+stride_before_pool = false
+
+[model.tcn]
+kernel_size = 11
+n_blocks = 5
+n_filters = 55
+add_log_softmax = true
+last_layer_type = "max_pool"
+dropout = 0.05270154233150525
+
+[model.shallow]
+n_filters_time = 40
+filter_time_length = 25
+n_filters_spat = 40
+pool_time_length = 75
+pool_time_stride = 15
+split_first_layer = true
+batch_norm = true
+batch_norm_alpha = 0.1
+
+[model.vit]
+patch_size = 10
+dim = 64
+depth = 6
+heads = 16
+mlp_dim = 64
+emb_dropout = 0.1
+
+[decision]
+# Second-stage decision model hyperparameters
+# backend picks the learner: "mlp" (the torch models) or "xgboost" (gradient
+# boosting over the same features). Unrelated to the API execution backends.
+backend = "mlp"
+detail_path = "./target/training_detail"
+csv_path = "./target/training_detail"  # legacy key consumed as fallback
+csv_result_path = "./target/decision_results.csv"
+metrics_path = "./target/decision_metrics.json"
+learning_rate = 0.01
+weight_decay = 0.01
+batch_size = 64
+n_epochs = 60
+n_repetitions = 5
+length = 10
+use_his = true
+use_hybrid = false
+adap_pool = false
+use_session_or_patients = ""  # empty for per-recording, "patients", or "sessions"
+hidden_layers = 0
+hidden_length = 5
+fix_testset = true
+train_ratio = 0.9072  # Derived from first-stage split
+valid_ratio = 0.75
+start_row = 1
+n_rows = 4
+row_gap = 4
+block = 0
+
+[decision.xgboost]
+# Consumed only when decision.backend = "xgboost"; passed straight to
+# xgboost.XGBClassifier. Sweep these with `dvc exp run -S`.
+max_depth = 6
+learning_rate = 0.05
+n_estimators = 300
+subsample = 0.85
+colsample_bytree = 0.7
+min_child_weight = 1
+gamma = 0.0
+reg_alpha = 0.0
+reg_lambda = 1.0
+early_stopping_rounds = 30
+n_jobs = -1
+random_state = 87

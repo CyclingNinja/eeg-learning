@@ -1,6 +1,6 @@
 stages:
   preprocess:
-    cmd: uv run python -m eeg_win_stack.pipeline.preprocess
+    cmd: uv run python -m eeg_learning.pipeline.preprocess
     params:
       - eeg_win_stack/config/params.toml:
           - data
@@ -12,7 +12,7 @@ stages:
           cache: true
 
   train:
-    cmd: uv run python -m eeg_win_stack.pipeline.train
+    cmd: uv run python -m eeg_learning.pipeline.train
     deps:
       - ./target/saved_windows
     params:
@@ -26,7 +26,7 @@ stages:
           cache: true
 
   evaluate:
-    cmd: uv run python -m eeg_win_stack.pipeline.evaluate
+    cmd: uv run python -m eeg_learning.pipeline.evaluate
     deps:
       - .\target\saved_windows
       - target/saved_models/window_model
@@ -45,7 +45,7 @@ stages:
           cache: false
   
   decision:
-    cmd: uv run python -m eeg_win_stack.pipeline.decision
+    cmd: uv run python -m eeg_learning.pipeline.decision
     deps:
       - target/training_detail
       # Holds the run token this stage reads to rejoin the train stage's MLflow run.
