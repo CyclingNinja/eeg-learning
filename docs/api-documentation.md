@@ -2,18 +2,18 @@
 
 Window-level EEG abnormality classification: loading and windowing raw recordings,
 building braindecode-compatible models, training, and evaluation. The functionality
-lives in the **`eeg_win_stack`** package.
+lives in the **`eeg_learning`** package.
 
 This README documents the **`api` layer** — the importable, production-facing
 interface for triggering training runs (locally or, later, on cloud compute),
 evaluating saved models, and (eventually) inference. It is distinct from the DVC
-`eeg_win_stack/pipeline/` stages, which exist for experimentation and parameter
+`eeg_learning/pipeline/` stages, which exist for experimentation and parameter
 sweeps only.
 
 ## Layout
 
 ```
-eeg_win_stack/
+eeg_learning/
   api/                 production interface (this document)
     jobs.py            run_training(...) -> TrainResult         — the real work
     artifacts.py       ModelArtifact: checkpoint + JSON manifest
@@ -101,13 +101,15 @@ from eeg_learning.api.backends import get_backend, Job, JobKind
 config = load()
 backend = get_backend("local")  # "azureml" / "slurm" planned
 
-handle = backend.submit(Job(
-    kind=JobKind.TRAIN,
-    config=config,
-    windows_path="data/saved_windows",
-    output_dir="data/saved_models",
-    options={"model_id": "deep4_run1"},  # optional; defaults to "<name>_<timestamp>"
-))
+handle = backend.submit(
+    Job(
+        kind=JobKind.TRAIN,
+        config=config,
+        windows_path="data/saved_windows",
+        output_dir="data/saved_models",
+        options={"model_id": "deep4_run1"},  # optional; defaults to "<name>_<timestamp>"
+    )
+)
 
 print(backend.status(handle))  # JobStatus.COMPLETED (LocalBackend is synchronous)
 print(backend.result(handle))  # {"model_id", "model_path", "manifest_path"}
@@ -126,7 +128,7 @@ classifier = Trainer(TrainingConfig()).load(model, artifact.model_path)
 
 ## API reference
 
-### `eeg_win_stack.api`
+### `eeg_learning.api`
 
 - **`run_training(config, *, windows_path, output_dir, model_id=None) -> TrainResult`**
   Load windowed data, split, build the model from `config["model"]`, fit, and save a
@@ -137,7 +139,7 @@ classifier = Trainer(TrainingConfig()).load(model, artifact.model_path)
   - `build_model()` — reconstruct the (untrained) model from the manifest.
   - properties: `model_name`, `build_kwargs`, `model_path`, `manifest_path`, `manifest`.
 
-### `eeg_win_stack.api.backends`
+### `eeg_learning.api.backends`
 
 - **`get_backend(name="local", **kwargs) -> Backend`** — `"local"` is implemented;
   `"azureml"`/`"slurm"` raise `NotImplementedError`; unknown names raise `ValueError`.
@@ -156,7 +158,7 @@ classifier = Trainer(TrainingConfig()).load(model, artifact.model_path)
 | `run_training` + `ModelArtifact`    | ✅ implemented                                    |
 | `LocalBackend` (TRAIN)              | ✅ implemented                                    |
 | Evaluate saved model (`run_evaluation`, backend `EVALUATE`) | ⬜ planned        |
-| CLI (`python -m eeg_win_stack ...`) | ⬜ planned (the command remote backends invoke)   |
+| CLI (`python -m eeg_learning ...`) | ⬜ planned (the command remote backends invoke)   |
 | FastAPI service                     | ⬜ planned (synchronous first; async with cloud)  |
 | Azure ML / Slurm backends           | ⬜ planned (`get_backend` stubs them)             |
 | Inference (`Predictor`)             | ⬜ interface stub only — no architecture yet      |

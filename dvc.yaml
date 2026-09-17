@@ -2,7 +2,7 @@ stages:
   preprocess:
     cmd: uv run python -m eeg_learning.pipeline.preprocess
     params:
-      - eeg_win_stack/config/params.toml:
+      - eeg_learning/config/params.toml:
           - data
           - preprocessing
           - windowing
@@ -16,7 +16,7 @@ stages:
     deps:
       - ./target/saved_windows
     params:
-      - eeg_win_stack/config/params.toml:
+      - eeg_learning/config/params.toml:
           - split
           - training
           - model
@@ -31,7 +31,7 @@ stages:
       - .\target\saved_windows
       - target/saved_models/window_model
     params:
-      - eeg_win_stack/config/params.toml:
+      - eeg_learning/config/params.toml:
           - output.training_detail_path
           - output.saved_models_path
           - split
@@ -51,7 +51,7 @@ stages:
       # Holds the run token this stage reads to rejoin the train stage's MLflow run.
       - target/saved_models/window_model
     params:
-      - eeg_win_stack/config/params.toml:
+      - eeg_learning/config/params.toml:
           - decision
           - output.decision_models_path
           - output.saved_models_path

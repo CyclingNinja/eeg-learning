@@ -5,7 +5,7 @@ set it up, what each stage records, where training detail and model artifacts
 are stored, and how to point artifact storage at Azure Blob Storage.
 
 All of the integration lives in one module —
-[`eeg_win_stack/tools/tracking.py`](../eeg_learning/tools/tracking.py). It is
+[`eeg_learning/tools/tracking.py`](../eeg_learning/tools/tracking.py). It is
 the only place in the package that imports `mlflow`, so that is the file to read
 when this document and the code disagree.
 
@@ -49,7 +49,7 @@ The handoff is a small JSON file called `run.json`, written by `train`:
 ```json
 {
   "run_id": "8f2c1d4e5a6b7c8d9e0f1a2b3c4d5e6f",
-  "experiment": "eeg_win_stack_local",
+  "experiment": "eeg_learning_local",
   "model_path": "target/saved_models/window_model/deep4_2026-08-18_14-22-05_params.pt",
   "created": "2026-08-18T14:22:05"
 }
@@ -81,11 +81,11 @@ can track it.
 ### Configure
 
 Everything is driven from the `[run]` section of
-[`eeg_win_stack/config/params.toml`](../eeg_learning/config/params.toml):
+[`eeg_learning/config/params.toml`](../eeg_learning/config/params.toml):
 
 ```toml
 [run]
-experiment_name = "eeg_win_stack"
+experiment_name = "eeg_learning"
 mlflow_tracking_uri = "mlruns"
 mlflow_required = true
 use_azure_artifacts = false
@@ -124,8 +124,8 @@ mlflow ui --backend-store-uri <your-uri>
 ### The `_local` experiment-name suffix
 
 `experiment_name(cfg)` appends `_local` when `use_azure_artifacts` is false. So
-with the config above you will find your runs under **`eeg_win_stack_local`** in
-the UI, not `eeg_win_stack`.
+with the config above you will find your runs under **`eeg_learning_local`** in
+the UI, not `eeg_learning`.
 
 This exists because `mlflow.start_run` raises if `set_experiment()` selected a
 different experiment than the run being resumed belongs to. Separating the two
@@ -325,10 +325,10 @@ with tracking.start_run(cfg, resume=False) as tracker:  # mint
 Helpers worth knowing:
 
 ```python
-tracking.read_token(cfg)          # the run.json dict, or None
+tracking.read_token(cfg)  # the run.json dict, or None
 tracking.resolve_model_path(cfg)  # the .pt train wrote (token first, mtime fallback)
-tracking.experiment_name(cfg)     # the resolved name, _local suffix included
-tracking.is_required(cfg)         # whether failures abort
+tracking.experiment_name(cfg)  # the resolved name, _local suffix included
+tracking.is_required(cfg)  # whether failures abort
 ```
 
 The API and CLI layers do **not** currently open runs — tracking is wired into
@@ -345,7 +345,7 @@ cat target/saved_models/window_model/run.json
 **Compare runs from the shell**
 
 ```bash
-mlflow runs list --experiment-name eeg_win_stack_local
+mlflow runs list --experiment-name eeg_learning_local
 ```
 
 **Sweep params and get one run per point**
@@ -355,7 +355,7 @@ dvc exp run -S 'eeg_learning/config/params.toml:training.learning_rate=0.0005'
 ```
 
 Each `dvc exp run` invocation runs `train` afresh, so each mints its own MLflow
-run with its own curves. (`params.toml` lives under `eeg_win_stack/config/`, not
+run with its own curves. (`params.toml` lives under `eeg_learning/config/`, not
 the repo root — DVC needs the full path in `-S`.)
 
 **Work offline**
@@ -369,7 +369,7 @@ dvc exp run -S 'eeg_learning/config/params.toml:run.mlflow_required=false'
 | Symptom | Cause and fix |
 | --- | --- |
 | `MLflowUnavailableError: No MLflow run to resume from ...` | `evaluate`/`decision` ran without a token. Run `train` first, or `dvc repro` the whole pipeline. If the model came from elsewhere, set `mlflow_required = false`. |
-| Runs missing from the UI | You are probably looking at `eeg_win_stack`; local runs land in **`eeg_win_stack_local`**. |
+| Runs missing from the UI | You are probably looking at `eeg_learning`; local runs land in **`eeg_learning_local`**. |
 | A second `mlruns/` appeared in a subdirectory | A stage was invoked by hand from somewhere other than the repo root; the relative tracking URI resolved against the wrong cwd. |
 | `mlflow.start_run` complains about a mismatched experiment | Something bypassed `tracking.configure()` and called `set_experiment` with a different name. Resuming stages must use the name in the token. |
 | Metrics land on the wrong run | A stale `MLFLOW_RUN_ID` in the environment. `start_run` clears it on exit; check for one exported in your shell. |

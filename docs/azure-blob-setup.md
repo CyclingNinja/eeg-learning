@@ -180,9 +180,9 @@ The current `dvc.yaml` hardcodes paths to the Seagate drive. To make the pipelin
 ```yaml
 stages:
   preprocess:
-    cmd: python -m eeg_win_stack.pipeline.preprocess
+    cmd: python -m eeg_learning.pipeline.preprocess
     params:
-      - eeg_win_stack/config/params.toml:
+      - eeg_learning/config/params.toml:
           - data
           - preprocessing
           - windowing
@@ -192,11 +192,11 @@ stages:
           cache: true
 
   train:
-    cmd: python -m eeg_win_stack.pipeline.train
+    cmd: python -m eeg_learning.pipeline.train
     deps:
       - data/saved_windows_data
     params:
-      - eeg_win_stack/config/params.toml:
+      - eeg_learning/config/params.toml:
           - split
           - training
           - model
@@ -206,12 +206,12 @@ stages:
           cache: true
 
   evaluate:
-    cmd: python -m eeg_win_stack.pipeline.evaluate
+    cmd: python -m eeg_learning.pipeline.evaluate
     deps:
       - data/saved_windows_data
       - data/saved_models
     params:
-      - eeg_win_stack/config/params.toml:
+      - eeg_learning/config/params.toml:
           - split
           - model
           - run
@@ -245,7 +245,7 @@ echo '/data/' >> .gitignore
 
 > **This is now config-driven — no code change needed.** Set
 > `use_azure_artifacts = true` and `azure_artifact_root` under `[run]` in
-> `eeg_win_stack/config/params.toml`, and `eeg_win_stack/tools/tracking.py`
+> `eeg_learning/config/params.toml`, and `eeg_win_stack/tools/tracking.py`
 > applies the `artifact_location` for you when it creates the experiment. See
 > [`mlflow-tracking.md`](mlflow-tracking.md#artifact-storage). The snippet below
 > is retained to show what that code does under the hood.
@@ -258,11 +258,9 @@ experiment:
 import os
 import mlflow
 
-AZURE_ARTIFACT_ROOT = (
-    "wasbs://mlflow-artifacts@eegpipelinedata.blob.core.windows.net/experiments"
-)
+AZURE_ARTIFACT_ROOT = "wasbs://mlflow-artifacts@eegpipelinedata.blob.core.windows.net/experiments"
 
-mlflow.set_tracking_uri("mlruns")           # keep local tracking DB
+mlflow.set_tracking_uri("mlruns")  # keep local tracking DB
 mlflow.set_experiment(
     experiment_name="eeg_pipeline",
     artifact_location=AZURE_ARTIFACT_ROOT,  # artifacts go to Azure
@@ -302,7 +300,7 @@ You can still browse runs locally with `mlflow ui` — the UI reads metadata fro
 Files to commit:
 
 ```bash
-git add .dvc/config pyproject.toml uv.lock dvc.yaml eeg_win_stack/config/params.toml
+git add .dvc/config pyproject.toml uv.lock dvc.yaml eeg_learning/config/params.toml
 git commit -m "Configure Azure Blob Storage remote for DVC and MLflow artifacts"
 ```
 

@@ -25,7 +25,7 @@
 
 set -euo pipefail
 
-PARAMS="eeg_win_stack/config/params.toml"
+PARAMS="eeg_learning/config/params.toml"
 
 # =============================================================================
 # Example sweep: learning rate × batch size grid

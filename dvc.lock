@@ -1,9 +1,9 @@
 schema: '2.0'
 stages:
   preprocess:
-    cmd: uv run python -m eeg_win_stack.pipeline.preprocess
+    cmd: uv run python -m eeg_learning.pipeline.preprocess
     params:
-      eeg_win_stack/config/params.toml:
+      eeg_learning/config/params.toml:
         data:
           use_tuab: true
           use_tueg: false
@@ -38,7 +38,7 @@ stages:
           use_azure_artifacts: false
           azure_artifact_root: 
             wasbs://mlflow-artifacts@medshedeegwinstack.blob.core.windows.net/experiments
-          experiment_name: eeg_win_stack
+          experiment_name: eeg_learning
         windowing:
           window_len_s: 60
           multiple: 0
@@ -72,7 +72,7 @@ stages:
       size: 26358566777
       nfiles: 11972
   train:
-    cmd: uv run python -m eeg_win_stack.pipeline.train
+    cmd: uv run python -m eeg_learning.pipeline.train
     deps:
     - path: ./target/saved_windows
       hash: md5
@@ -80,7 +80,7 @@ stages:
       size: 26358566777
       nfiles: 11972
     params:
-      eeg_win_stack/config/params.toml:
+      eeg_learning/config/params.toml:
         model:
           name: tcn
           final_conv_length: auto
@@ -136,7 +136,7 @@ stages:
           use_azure_artifacts: false
           azure_artifact_root: 
             wasbs://mlflow-artifacts@medshedeegwinstack.blob.core.windows.net/experiments
-          experiment_name: eeg_win_stack
+          experiment_name: eeg_learning
         split:
           split_way: folder
           train_size: 0.8
@@ -161,7 +161,7 @@ stages:
       size: 1268046
       nfiles: 1
   evaluate:
-    cmd: uv run python -m eeg_win_stack.pipeline.evaluate
+    cmd: uv run python -m eeg_learning.pipeline.evaluate
     deps:
     - path: .\target\saved_windows
       hash: md5
@@ -174,7 +174,7 @@ stages:
       size: 1268046
       nfiles: 1
     params:
-      eeg_win_stack/config/params.toml:
+      eeg_learning/config/params.toml:
         model:
           name: tcn
           final_conv_length: auto
@@ -231,7 +231,7 @@ stages:
           use_azure_artifacts: false
           azure_artifact_root: 
             wasbs://mlflow-artifacts@medshedeegwinstack.blob.core.windows.net/experiments
-          experiment_name: eeg_win_stack
+          experiment_name: eeg_learning
         split:
           split_way: folder
           train_size: 0.8
@@ -249,7 +249,7 @@ stages:
       size: 3034264
       nfiles: 5
   decision:
-    cmd: uv run python -m eeg_win_stack.pipeline.decision
+    cmd: uv run python -m eeg_learning.pipeline.decision
     deps:
     - path: target/training_detail
       hash: md5
@@ -257,7 +257,7 @@ stages:
       size: 3034264
       nfiles: 5
     params:
-      eeg_win_stack/config/params.toml:
+      eeg_learning/config/params.toml:
         decision:
           backend: mlp
           detail_path: ./target/training_detail
@@ -305,7 +305,7 @@ stages:
           use_azure_artifacts: false
           azure_artifact_root: 
             wasbs://mlflow-artifacts@medshedeegwinstack.blob.core.windows.net/experiments
-          experiment_name: eeg_win_stack
+          experiment_name: eeg_learning
     outs:
     - path: target/decision_metrics.json
       hash: md5
